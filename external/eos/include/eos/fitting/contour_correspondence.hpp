@@ -71,7 +71,7 @@ struct ModelContour
 
 	// We store r/l separately because we currently only fit to the contour facing the camera.
 	// Also if we were to fit to the whole contour: Be careful not to just fit to the closest. The 
-	// "invisible" ones behind might be closer on an e.g 90° angle. Store CNT for left/right side separately?
+	// "invisible" ones behind might be closer on an e.g 90?angle. Store CNT for left/right side separately?
 	
 	/**
 	 * Helper method to load a ModelContour from
@@ -225,7 +225,7 @@ inline std::tuple<std::vector<cv::Vec2f>, std::vector<cv::Vec4f>, std::vector<in
  * have different size. 
  * Correspondence can be established using get_nearest_contour_correspondences().
  *
- * If the yaw angle is between +-7.5°, both contours will be selected.
+ * If the yaw angle is between +-7.5? both contours will be selected.
  *
  * Note: Maybe rename to find_nearest_contour_points, to highlight that there is (potentially a lot) computational cost involved?
  *
@@ -250,7 +250,7 @@ std::pair<std::vector<std::string>, std::vector<int>> select_contour(float yaw_a
 		model_contour_indices.insert(end(model_contour_indices), begin(model_contour.left_contour), end(model_contour.left_contour));
 		contour_landmark_identifiers.insert(end(contour_landmark_identifiers), begin(contour_landmarks.left_contour), end(contour_landmarks.left_contour));
 	}
-	// Note there's an overlap between the angles - if a subject is between +- 7.5°, both contours get added.
+	// Note there's an overlap between the angles - if a subject is between +- 7.5? both contours get added.
 	return std::make_pair(contour_landmark_identifiers, model_contour_indices);
 };
 

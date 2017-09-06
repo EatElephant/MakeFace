@@ -260,8 +260,8 @@ private:
 	std::mt19937 engine; ///< Random number engine used to draw random coefficients.
 
 	cv::Mat mean; ///< A 3m x 1 col-vector (xyzxyz...)', where m is the number of model-vertices.
-	cv::Mat normalised_pca_basis; ///< The normalised PCA basis matrix. m x n (rows x cols) = numShapeDims x numShapePcaCoeffs, (=eigenvector matrix V). Each column is an eigenvector.
-	cv::Mat unnormalised_pca_basis; ///< The unnormalised PCA basis matrix. m x n (rows x cols) = numShapeDims x numShapePcaCoeffs, (=eigenvector matrix V). Each column is an eigenvector.
+	cv::Mat normalised_pca_basis; ///< The normalised PCA basis matrix. 3m x n (rows x cols) = numShapeDims x numShapePcaCoeffs, (=eigenvector matrix V). Each column is an eigenvector.
+	cv::Mat unnormalised_pca_basis; ///< The unnormalised PCA basis matrix. 3m x n (rows x cols) = numShapeDims x numShapePcaCoeffs, (=eigenvector matrix V). Each column is an eigenvector.
 	cv::Mat eigenvalues; ///< A col-vector of the eigenvalues (variances in the PCA space).
 
 	std::vector<std::array<int, 3>> triangle_list; ///< List of triangles that make up the mesh of the model.

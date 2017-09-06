@@ -73,9 +73,10 @@ void draw_axes_topright(float r_x, float r_y, float r_z, cv::Mat image);
 int main(int argc, char *argv[])
 {
 	fs::path modelfile, facedetector, landmarkdetector, mappingsfile, contourfile, edgetopologyfile, blendshapesfile;
-	string input_prefix, input_ext;
+	string input_prefix, input_ext, input_modelfile;
 	int input_frames;
 	bool useVideo = false;
+	bool outputModelFile = false;
 
 	try {
 		po::options_description desc("Allowed options");
@@ -99,11 +100,15 @@ int main(int argc, char *argv[])
 			("input image,i", po::value<string>(&input_prefix)->required()->default_value("face"),
 				"pre-fix name of input images")
 			("extension", po::value<string>(&input_ext)->required()->default_value("bmp"),
-				"path to leftside face image")
+				"extension of input images")
 			("input-frames,n", po::value<int>(&input_frames)->required()->default_value(0),
-				"path to rightside face image")
+				"number of input images used")
 			("video",
 				"Use computer camera to capture video instead of using input images")
+			("model-file", po::value<string>(&input_modelfile)->required()->default_value("ModelOutput/model_file.xml"),
+					"path to the file for the output of model")
+			("modelout",
+				"write out binary models into xml files.")
 			;
 
 		po::variables_map vm;
@@ -115,6 +120,8 @@ int main(int argc, char *argv[])
 		}
 		if (vm.count("video"))
 			useVideo = true;
+		if (vm.count("modelout"))
+			outputModelFile = true;
 		po::notify(vm);
 	}
 	catch (const po::error& e) {
@@ -153,6 +160,47 @@ int main(int argc, char *argv[])
 
 	//Load model topology
 	morphablemodel::EdgeTopology edge_topology = morphablemodel::load_edge_topology(edgetopologyfile.string());
+
+
+	//write out model file
+	if (outputModelFile)
+	{
+		try
+		{
+			cv::FileStorage outputFS;
+
+			if (!outputFS.open(input_modelfile, cv::FileStorage::WRITE))
+				throw cv::Exception(999, "Can't open outputfile", "main", "main.cpp", 173);
+
+			//output morphable model
+			outputFS << "morphable_model_shape_model_mean" << morphable_model.get_shape_model().get_mean();
+			outputFS << "morphable_model_shape_model_normalized_basis" << morphable_model.get_shape_model().get_normalised_pca_basis();
+			outputFS << "morphable_model_shape_model_unnormalized_basis" << morphable_model.get_shape_model().get_unnormalised_pca_basis();
+
+			outputFS << "morphable_model_color_model_mean" << morphable_model.get_shape_model().get_mean();
+			outputFS << "morphable_model_color_model_normalized_basis" << morphable_model.get_color_model().get_normalised_pca_basis();
+			outputFS << "morphable_model_color_model_unnormalized_basis" << morphable_model.get_color_model().get_unnormalised_pca_basis();
+
+			//output blendshapes
+			for (int i = 0; i < blendshapes.size(); i++)
+			{
+				outputFS << "Blendshape_" + blendshapes[i].name << blendshapes[i].deformation;
+			}
+
+			outputFS.release();
+
+			cout << "Finish output model files into: " + input_modelfile << "!" << endl;
+
+			return EXIT_SUCCESS;
+		}
+		catch (cv::Exception e)
+		{
+			cout << "Exception happens when trying to output model files!" << " Exception: " << e.what() << endl;
+			return EXIT_FAILURE;
+		}
+	}
+
+
 
 	//Read input image or open video capture
 	cv::Mat inputImage;
@@ -290,7 +338,7 @@ int main(int argc, char *argv[])
 		}
 
 		// Fit the 3DMM:
-		std::tie(mesh, rendering_params) = fitting::fit_shape_and_pose(morphable_model, blendshapes, rcr_to_eos_landmark_collection(current_landmarks), landmark_mapper, unmodified_frame.cols, unmodified_frame.rows, edge_topology, ibug_contour, model_contour, 3, 9, 15.0f, boost::none, shape_coefficients, blendshape_coefficients, image_points);
+		std::tie(mesh, rendering_params) = fitting::fit_shape_and_pose(morphable_model, blendshapes, rcr_to_eos_landmark_collection(current_landmarks), landmark_mapper, unmodified_frame.cols, unmodified_frame.rows, edge_topology, ibug_contour, model_contour, 3, 15, 15.0f, boost::none, shape_coefficients, blendshape_coefficients, image_points);
 
 		// Draw the 3D pose of the face:
 		draw_axes_topright(glm::eulerAngles(rendering_params.get_rotation())[0], glm::eulerAngles(rendering_params.get_rotation())[1], glm::eulerAngles(rendering_params.get_rotation())[2], frame);
@@ -319,7 +367,7 @@ int main(int argc, char *argv[])
 
 		cv::imshow("video", frame);
 		auto key = cv::waitKey(30);
-		
+
 		if (useVideo)
 		{
 			if (key == 'q') break;
@@ -366,7 +414,7 @@ void draw_axes_topright(float r_x, float r_y, float r_z, cv::Mat image)
 	const auto rot_mtx_x = glm::rotate(glm::mat4(1.0f), r_x, glm::vec3{ 1.0f, 0.0f, 0.0f });
 	const auto rot_mtx_y = glm::rotate(glm::mat4(1.0f), r_y, glm::vec3{ 0.0f, 1.0f, 0.0f });
 	const auto rot_mtx_z = glm::rotate(glm::mat4(1.0f), r_z, glm::vec3{ 0.0f, 0.0f, 1.0f });
-	const auto modelview = rot_mtx_z * rot_mtx_x * rot_mtx_y;
+	const auto modelview = rot_mtx_z * rot_mtx_x * rot_mtx_y; //convention of the rotation order is yaw->pitch->roll
 
 	const auto viewport = fitting::get_opencv_viewport(image.cols, image.rows);
 	const float aspect = static_cast<float>(image.cols) / image.rows;
