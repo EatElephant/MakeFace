@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 {
 	fs::path modelfile, facedetector, landmarkdetector, mappingsfile, contourfile, edgetopologyfile, blendshapesfile;
 	string input_prefix, input_ext, input_modelfile;
-	int input_frames;
+	int input_frames, num_iteration;
 	bool useVideo = false;
 	bool outputModelFile = false;
 
@@ -109,6 +109,8 @@ int main(int argc, char *argv[])
 					"path to the file for the output of model")
 			("modelout",
 				"write out binary models into xml files.")
+			("iterations", po::value<int>(&num_iteration)->required()->default_value(3),
+				"number of iteration used to fit, for video sequence 1-5 is good, for single image can take up to 300")
 			;
 
 		po::variables_map vm;
@@ -338,7 +340,7 @@ int main(int argc, char *argv[])
 		}
 
 		// Fit the 3DMM:
-		std::tie(mesh, rendering_params) = fitting::fit_shape_and_pose(morphable_model, blendshapes, rcr_to_eos_landmark_collection(current_landmarks), landmark_mapper, unmodified_frame.cols, unmodified_frame.rows, edge_topology, ibug_contour, model_contour, 3, 15, 15.0f, boost::none, shape_coefficients, blendshape_coefficients, image_points);
+		std::tie(mesh, rendering_params) = fitting::fit_shape_and_pose(morphable_model, blendshapes, rcr_to_eos_landmark_collection(current_landmarks), landmark_mapper, unmodified_frame.cols, unmodified_frame.rows, edge_topology, ibug_contour, model_contour, num_iteration, 15, 15.0f, boost::none, shape_coefficients, blendshape_coefficients, image_points);
 
 		// Draw the 3D pose of the face:
 		draw_axes_topright(glm::eulerAngles(rendering_params.get_rotation())[0], glm::eulerAngles(rendering_params.get_rotation())[1], glm::eulerAngles(rendering_params.get_rotation())[2], frame);
